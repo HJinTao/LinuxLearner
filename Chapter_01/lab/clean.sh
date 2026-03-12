@@ -1,2 +1,2 @@
 #!/bin/bash
-rm -f server.log grades.csv main.c
+rm -f server.log grades.csv main.c *.txt

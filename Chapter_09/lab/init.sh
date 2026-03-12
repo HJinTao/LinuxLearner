@@ -1,46 +1,74 @@
 #!/bin/bash
-# Initialize lab environment for Chapter 09
 
-set -e
+# 设置颜色变量
+GREEN='\033[0;32m'
+NC='\033[0m' # No Color
 
-# Create lab directory if not exists
-LAB_DIR="lab_files"
-mkdir -p "$LAB_DIR"
-cd "$LAB_DIR"
+echo -e "${GREEN}[*] 初始化 Chapter 09 综合实战环境...${NC}"
 
-# Task 1: Create webapp source code
-echo "Creating webapp source code..."
-mkdir -p webapp
-cat << 'EOF' > webapp/app.py
-import time
-import sys
-from http.server import SimpleHTTPRequestHandler, HTTPServer
+# 1. 创建 Web 应用源代码 (Python Flask 模拟)
+echo -e "${GREEN}[+] 生成 webapp 源码...${NC}"
+mkdir -p webapp/src
+mkdir -p webapp/config
+mkdir -p webapp/logs
 
-class MyHandler(SimpleHTTPRequestHandler):
+# 主程序
+cat > webapp/src/app.py << 'EOF'
+from http.server import BaseHTTPRequestHandler, HTTPServer
+import os
+import json
+
+CONFIG_FILE = '../config/app.conf'
+PORT = 8080
+
+# 简单的配置加载
+if os.path.exists(CONFIG_FILE):
+    with open(CONFIG_FILE, 'r') as f:
+        for line in f:
+            if 'PORT' in line:
+                PORT = int(line.split('=')[1].strip())
+
+class MyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
-        self.send_response(200)
-        self.send_header('Content-type', 'text/html')
-        self.end_headers()
-        self.wfile.write(b"Hello from Chapter 09!")
+        if self.path == '/':
+            self.send_response(200)
+            self.send_header('Content-type', 'text/html')
+            self.end_headers()
+            self.wfile.write(b"<h1>Welcome to LinuxLearner Capstone!</h1>")
+        elif self.path == '/api/health':
+            self.send_response(200)
+            self.send_header('Content-type', 'application/json')
+            self.end_headers()
+            self.wfile.write(json.dumps({"status": "ok", "port": PORT}).encode())
+        else:
+            self.send_response(404)
+            self.end_headers()
 
-port = 5000
-print(f"Starting server on port {port}...")
-sys.stdout.flush()
-httpd = HTTPServer(('127.0.0.1', port), MyHandler)
-httpd.serve_forever()
+def run():
+    server_address = ('', PORT)
+    httpd = HTTPServer(server_address, MyHandler)
+    print(f"Starting server on port {PORT}...")
+    httpd.serve_forever()
+
+if __name__ == '__main__':
+    run()
 EOF
 
-echo "How to run:" > webapp/README.txt
-echo "1. chmod +x app.py" >> webapp/README.txt
-echo "2. python3 app.py" >> webapp/README.txt
+# 配置文件
+echo "PORT=8080" > webapp/config/app.conf
 
-# Create start.sh (but leave it empty or partially filled for the student)
-echo "#!/bin/bash" > webapp/start.sh
-echo "# Write your startup script here" >> webapp/start.sh
-
-# Pack everything
-tar -czvf webapp.tar.gz webapp
+# 2. 打包源码
+echo -e "${GREEN}[+] 打包源码为 release_v1.0.tar.gz...${NC}"
+tar -czf release_v1.0.tar.gz webapp
 rm -rf webapp
 
-echo "Lab environment initialized in $(pwd)."
-echo "You have one file: webapp.tar.gz. Good luck!"
+# 3. 模拟一个残留的旧进程 (Port Conflict)
+echo -e "${GREEN}[+] 启动一个占用 8080 端口的干扰进程...${NC}"
+# 使用 python 启动一个简单的 http server 占用端口
+python3 -m http.server 8080 > /dev/null 2>&1 &
+OLD_PID=$!
+echo "$OLD_PID" > .conflict_pid
+echo "Old process started with PID $OLD_PID"
+
+echo -e "${GREEN}[✔] 实验环境初始化完成！${NC}"
+echo -e "你的任务：部署 release_v1.0.tar.gz，解决端口冲突，配置服务自启。"

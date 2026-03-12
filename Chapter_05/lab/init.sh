@@ -18,32 +18,46 @@ echo "def add(a, b): return a + b" > my_project/src/utils.py
 echo "DB_HOST=localhost" > my_project/config/db.env
 echo "# Documentation" > my_project/docs/README.md
 
-# 2. 生成一个需要修复的烂脚本 (Bad Script)
+# 2. 生成一个充满 Bug 的备份脚本 (Bad Script)
 echo -e "${GREEN}[+] 生成需要修复的脚本 bad_backup.sh...${NC}"
 cat > bad_backup.sh << 'EOF'
 #!/bin/bash
+
 # 这是一个有问题的备份脚本
-# 任务：修复它，使其能够正确备份 my_project 目录
+# 你的任务是修复它，使其能够正确备份 my_project 目录
 
-# 1. 变量定义 (这里有错，变量赋值不能有空格)
-BACKUP_DIR = "./backup"
-SOURCE_DIR="./my_project"
+# 错误1: 变量赋值不能有空格
+SOURCE_DIR = "./my_project"
+BACKUP_DIR = "./backups"
 
-# 2. 创建目录 (这里没有检查目录是否存在)
+# 错误2: 没有检查目录是否存在，直接创建可能会报错
 mkdir $BACKUP_DIR
 
-# 3. 执行备份 (这里使用了错误的压缩命令参数，且没有时间戳)
-tar -cvf backup.tar $SOURCE_DIR
+# 错误3: 生成的文件名是固定的，每次运行都会覆盖旧备份。应该加上时间戳。
+ARCHIVE_NAME="project_backup.tar.gz"
 
-# 4. 移动文件 (这里变量引用没加引号，如果目录有空格会挂)
-mv backup.tar $BACKUP_DIR/
+echo "Starting backup..."
 
-echo "Backup done!"
+# 错误4: tar 命令参数不对，且没有压缩 (gzip)
+# 这里的 cvf 只是打包，没有压缩
+tar -cvf $ARCHIVE_NAME $SOURCE_DIR
+
+# 错误5: 移动文件时，如果目标目录不存在怎么办？且变量引用未加引号
+mv $ARCHIVE_NAME $BACKUP_DIR
+
+echo "Backup completed successfully!"
 EOF
 chmod +x bad_backup.sh
 
-# 3. 创建一个模拟的部署环境
-mkdir -p deploy_env
+# 3. 生成一个用于练习循环和条件的目录
+echo -e "${GREEN}[+] 生成 logs/ 目录 (用于批量重命名练习)...${NC}"
+mkdir -p logs
+touch logs/app_2023_01_01.log
+touch logs/app_2023_01_02.log
+touch logs/app_2023_01_03.log
+touch logs/error_2023_01_01.log
+# 混入一个不需要处理的文件
+touch logs/readme.txt
 
 echo -e "${GREEN}[✔] 实验环境初始化完成！${NC}"
-echo -e "当前目录下已生成: my_project/, bad_backup.sh"
+echo -e "当前目录下已生成: my_project/, bad_backup.sh, logs/"

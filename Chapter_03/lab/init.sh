@@ -6,47 +6,44 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}[*] 初始化 Chapter 03 实验环境...${NC}"
 
-# 1. 生成 CPU 满载脚本
-echo -e "${GREEN}[+] 生成 high_cpu.py (模拟 CPU 占用 100%)...${NC}"
-cat > high_cpu.py << EOF
-import time
-import os
-import sys
-
-print(f"Process started with PID: {os.getpid()}")
-print("I am going to eat your CPU now...")
-
-try:
-    while True:
-        # 简单的数学运算死循环
-        _ = 2 ** 1000
-except KeyboardInterrupt:
-    print("Stopping...")
-EOF
-
-# 2. 生成 假死/睡眠 脚本 (模拟卡死的服务)
-echo -e "${GREEN}[+] 生成 frozen_service.py (模拟卡死的服务)...${NC}"
-cat > frozen_service.py << EOF
-import time
-import os
-
-print(f"Service started with PID: {os.getpid()}")
-print("I am just sleeping forever... zzz...")
-
-while True:
-    time.sleep(10)
-EOF
-
-# 3. 生成 内存泄漏脚本 (可选，为了简单起见，本章重点在 CPU 和 kill)
-# 但我们可以生成一个名字很奇怪的脚本，练习 ps筛选
-echo -e "${GREEN}[+] 生成 sneaky_process.sh (模拟伪装进程)...${NC}"
-cat > sneaky_process.sh << EOF
+# 1. 创建模拟的恶意进程脚本 (Crypto Miner)
+# 虽然名字叫 crypto_miner，但实际上只是 sleep，不占用 CPU，避免卡死机器
+cat > crypto_miner.sh << EOF
 #!/bin/bash
-echo "I am hiding..."
-sleep 3600
+# 模拟恶意挖矿进程，伪装成系统服务
+while true; do
+    sleep 1
+done
 EOF
-chmod +x sneaky_process.sh
+chmod +x crypto_miner.sh
 
-echo -e "${GREEN}[✔] 实验脚本生成完成！${NC}"
-echo -e "当前目录下已生成: high_cpu.py, frozen_service.py, sneaky_process.sh"
-echo -e "${GREEN}注意：请务必阅读 README.md 中的实验步骤来运行这些脚本！${NC}"
+# 2. 创建模拟的僵尸/顽固进程 (Invincible Service)
+# 这个脚本会捕获 SIGTERM (15) 信号，导致普通的 kill 无法杀死它
+cat > invincible_service.sh << EOF
+#!/bin/bash
+# 捕获 SIGTERM 信号
+trap "echo 'Ha! I refuse to die! (Try kill -9)'" SIGTERM
+
+echo "Service started. I am invincible against normal kill commands."
+while true; do
+    sleep 1
+done
+EOF
+chmod +x invincible_service.sh
+
+# 3. 启动进程 (后台运行)
+echo -e "${GREEN}[+] 启动模拟进程...${NC}"
+./crypto_miner.sh > /dev/null 2>&1 &
+MINER_PID=$!
+echo "Crypto Miner PID: $MINER_PID"
+
+./invincible_service.sh > /dev/null 2>&1 &
+SERVICE_PID=$!
+echo "Invincible Service PID: $SERVICE_PID"
+
+# 将 PID 保存到隐藏文件，供验证脚本使用
+echo "$MINER_PID" > .miner_pid
+echo "$SERVICE_PID" > .service_pid
+
+echo -e "${GREEN}[✔] 恶意进程已在后台启动！${NC}"
+echo -e "请按照 README.md 的指示，找到并终结它们。"

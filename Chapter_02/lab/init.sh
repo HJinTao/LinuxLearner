@@ -6,59 +6,56 @@ NC='\033[0m' # No Color
 
 echo -e "${GREEN}[*] 初始化 Chapter 02 实验环境...${NC}"
 
-# 1. 创建模拟的项目构建目录 (Project Build) - 用于 find & delete
-echo -e "${GREEN}[+] 生成构建目录与临时文件...${NC}"
-mkdir -p project_build/src/module_a
-mkdir -p project_build/src/module_b
-mkdir -p project_build/lib
-mkdir -p project_build/tests
+# 1. 模拟日志目录 (Log Rotation Policy)
+echo -e "${GREEN}[+] 生成 /var/log 模拟目录...${NC}"
+mkdir -p var/log
+# 生成一些"旧"日志 (通过 touch -d 修改时间戳)
+# 注意: Mac 和 Linux 的 touch -d 语法不同，这里尝试兼容或使用 python
+if [[ "$OSTYPE" == "darwin"* ]]; then
+    # MacOS
+    touch -d "$(date -v-10d +%Y-%m-%dT%H:%M:%S)" var/log/app.log.1
+    touch -d "$(date -v-20d +%Y-%m-%dT%H:%M:%S)" var/log/app.log.2
+    touch -d "$(date -v-30d +%Y-%m-%dT%H:%M:%S)" var/log/auth.log.old  # 这个是受保护的，虽然旧但不能删
+    touch -d "$(date -v-2d +%Y-%m-%dT%H:%M:%S)" var/log/current.log
+else
+    # Linux
+    touch -d "10 days ago" var/log/app.log.1
+    touch -d "20 days ago" var/log/app.log.2
+    touch -d "30 days ago" var/log/auth.log.old
+    touch -d "2 days ago" var/log/current.log
+fi
 
-# 在不同深度生成 .o (object) 和 .tmp (temporary) 文件
-touch project_build/main.o
-touch project_build/src/module_a/utils.o
-touch project_build/src/module_a/config.tmp
-touch project_build/src/module_b/network.o
-touch project_build/src/module_b/cache.tmp
-touch project_build/lib/math.o
-touch project_build/tests/test_main.o
-touch project_build/tests/test_data.tmp
+# 2. 模拟用户目录 (Disk Usage Analysis)
+echo -e "${GREEN}[+] 生成 home/user 目录...${NC}"
+mkdir -p home/user/videos
+mkdir -p home/user/docs
+mkdir -p home/user/projects
+mkdir -p home/user/.cache
 
-# 生成一些正常文件，确保不被误删
-touch project_build/main.c
-touch project_build/src/module_a/utils.c
-touch project_build/src/module_b/network.c
-touch project_build/README.md
+# 生成不同大小的文件 (使用 dd)
+# Videos: 50MB total
+dd if=/dev/zero of=home/user/videos/movie.mp4 bs=1M count=20 2>/dev/null
+dd if=/dev/zero of=home/user/videos/show.mkv bs=1M count=30 2>/dev/null
 
-# 2. 创建作业提交目录 (Submissions) - 用于批量重命名
-echo -e "${GREEN}[+] 生成作业提交目录...${NC}"
-mkdir -p submissions
-# 模拟 20 个学生提交了错误的后缀名 (.TEXT 而不是 .txt)
-for i in {1001..1020}; do
-    echo "Homework content for student $i" > "submissions/student_${i}.TEXT"
-done
-# 混入几个正确的文件
-echo "Homework content" > submissions/student_1021.txt
-echo "Homework content" > submissions/student_1022.txt
+# Projects: 10MB total
+dd if=/dev/zero of=home/user/projects/code.tar.gz bs=1M count=10 2>/dev/null
 
-# 3. 创建隐藏的垃圾大文件 (Hidden Space Eater)
-echo -e "${GREEN}[+] 生成隐藏的大文件...${NC}"
-mkdir -p logs/archive/2023/11
-# 创建一个 50MB 的大文件 (在 Linux/Mac 下用 dd，Windows git bash 也支持)
-# 为了兼容性，我们写入大量文本
-echo "Generating large log file..."
-for i in {1..50000}; do
-    echo "This is a very long log line that takes up space on the disk to simulate a large log file caused by an error loop." >> logs/archive/2023/11/debug_trace.log
-done
-# 复制几次以增大体积
-cp logs/archive/2023/11/debug_trace.log logs/archive/2023/11/debug_trace.log.bak
-cat logs/archive/2023/11/debug_trace.log.bak >> logs/archive/2023/11/debug_trace.log
-cat logs/archive/2023/11/debug_trace.log.bak >> logs/archive/2023/11/debug_trace.log
-rm logs/archive/2023/11/debug_trace.log.bak
+# Docs: 1MB total
+dd if=/dev/zero of=home/user/docs/thesis.pdf bs=1M count=1 2>/dev/null
 
-# 创建一些小日志文件作为干扰
-touch logs/access.log
-touch logs/error.log
-touch logs/archive/2023/10/old.log
+# Cache: 100MB (垃圾文件，占用最多)
+dd if=/dev/zero of=home/user/.cache/temp.dat bs=1M count=100 2>/dev/null
+
+# 3. 模拟带空格的文件名 (Whitespace Hell)
+echo -e "${GREEN}[+] 生成 downloads/ 目录 (含空格文件名)...${NC}"
+mkdir -p downloads
+mkdir -p documents # 目标目录
+
+touch "downloads/Holiday Photo.jpg"
+touch "downloads/Tax Return 2023.pdf"
+touch "downloads/Project Spec v2.pdf"
+touch "downloads/funny meme.png"
+touch "downloads/My Resume.pdf"
 
 echo -e "${GREEN}[✔] 环境初始化完成！${NC}"
-echo -e "当前目录下已生成: project_build/, submissions/, logs/"
+echo -e "当前目录下已生成: var/, home/, downloads/, documents/"

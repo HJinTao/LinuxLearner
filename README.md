@@ -2,6 +2,17 @@
 
 欢迎来到 Linux 实战课程！本课程专为开发者设计，旨在通过真实的运维场景和痛点，帮助你掌握 Linux 核心命令与系统管理技能。告别枯燥的参数背诵，从“解决问题”开始你的 Linux 之旅。
 
+## 目录 (Table of Contents)
+
+*   [项目简介](#-项目简介)
+*   [预备知识](#-预备知识)
+*   [环境配置 (Docker)](#-环境配置-docker)
+*   [课程大纲](#-课程大纲)
+*   [目录结构说明](#-目录结构说明)
+*   [如何开始学习](#-如何开始学习)
+*   [贡献指南](#-贡献指南)
+*   [许可证](#-许可证)
+
 ## 🚀 项目简介
 
 本课程采用 **“场景驱动” (Scenario-Driven)** 的教学模式。每一章都从一个具体的“痛点”出发（例如：日志文件太大怎么查？端口被占用怎么办？），引导你使用正确的工具解决问题。
@@ -9,6 +20,14 @@
 *   **实战导向**: 拒绝空谈，直接上手。
 *   **环境自洽**: 每个章节提供初始化脚本，一键生成实验环境。
 *   **自动验证**: 提供验证脚本，实时反馈学习成果。
+
+## 📚 预备知识
+
+在开始本课程之前，建议你具备以下基础知识：
+
+*   **基本的终端操作**: 了解如何打开终端，使用 `cd`、`ls` 等基本命令。
+*   **基本的计算机概念**: 了解什么是文件、目录、进程等。
+*   **英语基础**: 能够阅读简单的英文文档和报错信息。
 
 ## 🛠️ 环境配置 (Docker)
 
@@ -72,6 +91,21 @@ apt-get install -y vim curl git iproute2 iputils-ping procps
 | **Chapter 08** | [服务守护 (Daemons)](./Chapter_08) | `systemctl`, `nohup` | 让程序在后台稳定运行 |
 | **Chapter 09** | [综合实战 (Capstone)](./Chapter_09) | All Skills | 从零部署 Web 应用全流程 |
 
+## 📂 目录结构说明
+
+每个章节的目录结构如下：
+
+```
+Chapter_XX/
+├── README.md       # 本章的学习指南和任务说明
+├── lab/            # 实验环境相关脚本
+│   ├── init.sh     # 初始化脚本：生成实验数据
+│   ├── verify.sh   # 验证脚本：检查任务是否完成
+│   └── clean.sh    # 清理脚本：恢复环境（可选）
+└── solution/       # 参考答案（卡住时再看！）
+    └── README.md
+```
+
 ## ⚡ 如何开始学习
 
 以 **Chapter 01** 为例：
@@ -96,9 +130,23 @@ apt-get install -y vim curl git iproute2 iputils-ping procps
 5.  **验证结果**:
     当你认为任务完成后，运行验证脚本：
     ```bash
-    bash verify.sh
+    bash lab/verify.sh
     ```
     如果看到 `[PASS]`，恭喜你通关！进入下一章吧。
+
+## 🤝 贡献指南
+
+如果你发现任何错误或有改进建议，欢迎提交 Issue 或 Pull Request。
+
+1.  Fork 本仓库
+2.  创建你的特性分支 (`git checkout -b feature/AmazingFeature`)
+3.  提交你的修改 (`git commit -m 'Add some AmazingFeature'`)
+4.  推送到分支 (`git push origin feature/AmazingFeature`)
+5.  开启一个 Pull Request
+
+## 📄 许可证
+
+本项目采用 MIT 许可证。详情请参阅 [LICENSE](./LICENSE) 文件。
 
 ---
 Happy Hacking! 🐧

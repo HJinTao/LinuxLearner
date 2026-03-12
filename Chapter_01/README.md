@@ -2,81 +2,108 @@
 
 ## 1. 实战背景 (The Pain Point)
 
-想象一下，你是一名刚入职的后端开发实习生。
+作为一名后端工程师或运维人员，你每天都要和海量的文本打交道。
 
-**场景一**：你的主管突然甩给你一个 2GB 的服务器日志文件 `server.log`，并告诉你：“昨晚 8 点系统崩了一次，赶紧把所有报错信息找出来发给我，我 5 分钟后要开会。” —— 你还在手动翻页吗？
+*   **场景一 (Security Audit)**: 安全团队发来警报，说内网有机器正在被暴力破解 SSH 密码。你需要从 500MB 的 `auth.log` 中，统计出某个可疑 IP 到底尝试了多少次，并提取出它的所有登录时间。
+*   **场景二 (Crash Investigation)**: 线上支付服务突然挂了。监控显示在 `10:05:05` 抛出了 `CRITICAL` 错误。但是，光看错误信息 "Connection Refused" 是没用的，你需要知道错误发生**前 5 秒**系统在做什么，才能复现 Bug。
+*   **场景三 (Code Debt)**: 项目要重构，主管让你把所有代码（包括子目录）里标记为 `TODO` 或 `FIXME` 的文件找出来，列一个清单。
 
-**场景二**：教务处的老师发来一份混乱的 CSV 成绩单 `grades.csv`，让你把所有“网络安全（CyberSecurity）”专业的学生名单整理出来。 —— 你还在用 Excel 的筛选功能吗？如果是 100 个这样的文件呢？
+本章我们将学习如何使用 Linux 的“文本探针”工具组，在不打开文件的情况下，精准定位、统计和分析信息。
 
-本章我们将化身“文本侦探”，学习如何不打开文件就能精准定位信息。
+## 2. 核心工具箱 (The Toolkit)
 
-## 2. 核心命令详解 (The Toolkit)
+### 2.1 `grep` - 文本搜索瑞士军刀
+`grep` (Global Regular Expression Print) 是最强大的文本搜索工具。
 
-在 Linux 中，我们很少直接用编辑器（如 vim/nano）打开大文件，因为那太慢了。我们使用流式处理工具。
+**基础用法**:
+`grep [参数] "搜索内容" [文件]`
 
-### 2.1 `cat` - 也就是看看 (Concatenate)
-最简单的查看文件命令，但通常配合管道使用。
-*   `cat filename`: 显示整个文件内容。
-*   `cat -n filename`: 显示内容并显示行号。
+**详细参数说明**:
 
-### 2.2 `head` & `tail` - 掐头去尾
-*   `head -n 5 filename`: 查看文件的前 5 行（快速确认文件格式）。
-*   `tail -n 10 filename`: 查看文件的最后 10 行（通常日志的最新报错就在这里）。
-*   `tail -f filename`: **神器**。实时监控文件末尾的新增内容（实时看日志）。
+| 参数 | 英文全称 | 含义 | 示例 |
+| :--- | :--- | :--- | :--- |
+| `-i` | **i**gnore-case | **忽略大小写**。默认 grep 区分大小写，加上它后 "error", "ERROR", "Error" 都会被搜到。 | `grep -i "error" server.log` |
+| `-v` | in**v**ert-match | **反向匹配**。只显示**不包含**关键词的行。用于排除干扰信息。 | `grep -v "INFO" server.log` (排除普通日志) |
+| `-r` | **r**ecursive | **递归搜索**。在指定目录及其所有子目录下搜索。 | `grep -r "TODO" ./src` |
+| `-l` | files-with-matches | **只列出文件名**。不显示具体的匹配行，只显示包含该关键词的文件路径。 | `grep -rl "TODO" ./src` (配合 -r 使用) |
+| `-n` | **n**umber | **显示行号**。显示匹配行在文件中的行号。 | `grep -n "ERROR" server.log` |
+| `-c` | **c**ount | **统计行数**。不打印匹配的内容，只输出匹配了多少行。 | `grep -c "ERROR" server.log` |
+| `-B <N>` | **B**efore | **显示前 N 行**。除了匹配行，还显示它前面的 N 行上下文。 | `grep -B 5 "CRITICAL" server.log` |
+| `-A <N>` | **A**fter | **显示后 N 行**。除了匹配行，还显示它后面的 N 行上下文。 | `grep -A 5 "CRITICAL" server.log` |
+| `-C <N>` | **C**ontext | **显示前后 N 行**。同时显示前后上下文。 | `grep -C 5 "CRITICAL" server.log` |
+| `-E` | **E**xtended-regexp | **扩展正则表达式**。允许使用 `|` (或) 等高级正则语法。 | `grep -E "ERROR|WARN" server.log` |
 
-### 2.3 `grep` - 文本搜查官 (Global Regular Expression Print)
-最强大的文本搜索工具。
-*   `grep "keyword" filename`: 找出包含 keyword 的所有行。
-*   `grep -v "keyword" filename`: 反向查找，找出**不**包含 keyword 的行。
-*   `grep -i "keyword" filename`: 忽略大小写。
-*   `grep -n "keyword" filename`: 显示匹配行的行号。
-*   `grep -E "pattern" filename`: 使用扩展正则表达式（更复杂的逻辑）。
+> **💡 小贴士**: 记不住参数？
+> *   想看上下文？记 **A**fter, **B**efore, **C**ontext (ABC)。
+> *   想排除？记 in**v**ert。
+> *   想忽略大小写？记 **i**gnore。
 
-> **新手引导**: 试着在终端输入 `man grep`，按 `q` 退出。学会查手册是高手的标志。
+### 2.2 `wc` - 这里的 wc 不是厕所 (Word Count)
+用于统计文件的各种计数。
 
-## 3. 正则与逻辑 (The Logic)
+**详细参数说明**:
 
-在搜索时，我们经常需要模糊匹配。
+| 参数 | 英文全称 | 含义 | 示例 |
+| :--- | :--- | :--- | :--- |
+| `-l` | **l**ines | **统计行数**。最常用的参数。 | `wc -l file.txt` |
+| `-w` | **w**ords | **统计单词数**。以空格/换行分隔。 | `wc -w file.txt` |
+| `-c` | **c**haracters | **统计字节数**。 | `wc -c file.txt` |
 
-*   **管道符 `|`**: 将前一个命令的输出，作为后一个命令的输入。
-    *   `cat server.log | grep "ERROR"` 等同于 `grep "ERROR" server.log`。
-    *   但 `head -n 100 server.log | grep "ERROR"` 可以只搜前 100 行。
+**组合技**:
+`grep "ERROR" server.log | wc -l`
+(先找出所有 ERROR 行，再统计有多少行 = 统计错误出现的次数)
 
-*   **重定向 `>`**: 将结果保存到文件。
-    *   `grep "ERROR" server.log > errors.txt`：把搜到的结果写入 `errors.txt`。
+### 2.3 管道 (Pipe `|`) 与 重定向 (`>`)
+*   **管道 `|`**: 管道就像流水线。它把上一个命令的**输出 (Output)**，直接插到下一个命令的**输入 (Input)** 口。
+    *   *场景*: "把 `cat` 吐出来的内容，喂给 `grep` 吃，再把 `grep` 剩下的骨头，喂给 `head` 看。"
+    *   `cat huge.log | grep "ERROR" | head -n 5`
 
-## 4. 实验手册 (Hands-on Lab)
+*   **重定向 `>`**:
+    *   `>` (覆盖): 把命令结果写入文件。**注意：如果文件存在，会先清空它！**
+        *   `echo "Hello" > readme.txt`
+    *   `>>` (追加): 把命令结果追加到文件末尾。不会清空原文件。
+        *   `echo "World" >> readme.txt`
 
-请先在当前目录下运行初始化脚本，生成实验数据：
+## 3. 实验任务 (Hands-on Lab)
+
+请先在 `Chapter_01` 目录下运行初始化脚本：
 ```bash
 bash lab/init.sh
 ```
-运行后，你的目录下会出现 `server.log`, `grades.csv`, `main.c`。
+这会生成 `auth.log` (安全日志), `server.log` (应用日志) 和 `project/` (代码库)。
 
-### 任务 1: 抓捕嫌疑人 (Log Analysis)
-**目标**: 从 `server.log` 中找出所有包含 "ERROR" 或 "CRITICAL" 的行，并将结果保存到 `error_report.txt`。
-*   *提示*: 你可以运行两次 grep 并追加（`>>`），或者使用 `grep -E "ERROR|CRITICAL"`。
+### 任务 1: 安全审计 (Security Audit)
+**目标**: 分析 `auth.log`，统计 IP `192.168.1.100` 发起的失败登录尝试 (`Failed password`) 一共有多少次。
+*   **要求**: 将统计出的**数字**保存到 `attack_count.txt`。
+*   *提示*:
+    1.  先用 `grep` 过滤出包含该 IP 的行。
+    2.  再通过管道 `|` 过滤出包含 "Failed password" 的行。
+    3.  最后用 `wc -l` 统计行数，或者直接在最后一步用 `grep -c`。
+    4.  别忘了把结果 `>` 重定向到文件。
 
-### 任务 2: 验明正身 (Code Inspection)
-**目标**: 提取 `main.c` 的前 5 行，保存到 `main_head.txt`。我们需要确认这个文件是否包含了正确的头文件。
-*   *提示*: 使用 `head` 命令。
+### 任务 2: 崩溃现场还原 (Crash Investigation)
+**目标**: 在 `server.log` 中，找到 `CRITICAL` 级别的错误。我们需要知道错误发生前的上下文。
+*   **要求**: 提取包含 `CRITICAL` 的行，以及它**之前 (Before) 的 5 行**日志。将结果保存到 `crash_context.txt`。
+*   *提示*: 这里的关键词是“之前” (Before)。使用 `grep` 对应参数即可。
 
-### 任务 3: 人员筛选 (Data Mining)
-**目标**: 从 `grades.csv` 中筛选出所有 "CyberSecurity" 专业的学生记录，保存到 `security_students.txt`。
-*   *提示*: `grep` 可以直接搜索 CSV 中的特定单词。
+### 任务 3: 技术债务扫描 (Code Debt Scan)
+**目标**: 你的团队接手了一个旧项目 `project/`。请找出所有包含 `TODO` 或 `FIXME` 标记的文件。
+*   **要求**: 递归搜索 `project/` 目录，只列出**文件名**，保存到 `code_debt.txt`。
+*   *提示*:
+    1.  需要递归搜索子目录，用什么参数？
+    2.  只需要文件名，不需要代码内容，用什么参数？
+    3.  关键词是 "TODO" 或 "FIXME"，可以用 `grep -E "TODO|FIXME"`。
 
-## 5. 通关验证 (Verification)
+## 4. 验证与通关
 
-完成以上三个任务后，运行验证脚本：
-
+完成任务后，运行验证脚本：
 ```bash
-bash verify.sh
+bash lab/verify.sh
 ```
+如果看到 `[PASS]`，说明你已经掌握了 Linux 文本处理的核心技能！
 
-如果看到 `[PASS]` 和 `恭喜！所有任务已完成！`，说明你已经掌握了这一章的内容。
+## 5. 进阶思考 (Deep Dive)
 
-## 6. 避坑与原理 (Deep Dive)
-
-1.  **管道缓冲区**: 当你使用 `tail -f server.log | grep "ERROR"` 时，可能会发现报错显示有延迟。这是因为 Linux 的管道有缓冲区（Buffer）。只有缓冲区满了，数据才会流向下一个命令。
-2.  **grep 的颜色**: 在脚本中使用 grep 时，为了避免干扰，有时需要加上 `--color=never`，但在终端交互时，`--color=auto` 能帮你高亮关键字。
-3.  **一切皆文本**: 在 Linux 中，无论是配置、日志还是代码，本质都是文本流。掌握了文本处理，你就掌握了 Linux 的半壁江山。
+1.  **正则威力**: `grep -E` (Extended Regex) 允许使用更复杂的逻辑。例如 `grep -E "ERROR|WARN"` 可以同时搜索错误和警告。
+2.  **效率**: 在几 GB 的日志文件中，`grep` 依然非常快。但如果是几百 GB，你可能需要 `awk` 或者专门的日志分析工具 (ELK Stack)。
+3.  **Color**: 使用 `grep --color=auto` 可以高亮匹配的关键字，让你一眼看到重点。

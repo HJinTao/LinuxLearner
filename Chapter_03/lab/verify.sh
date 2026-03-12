@@ -1,52 +1,50 @@
 #!/bin/bash
 
 # 验证脚本
-# 检查用户是否杀死了指定的恶意进程
-
 GREEN='\033[0;32m'
 RED='\033[0;31m'
 NC='\033[0m'
 
 PASS=0
-TOTAL=3
+TOTAL=2
 
 echo -e "=============================="
 echo -e "    Chapter 03 通关验证"
 echo -e "=============================="
 
-# 任务 1: 检查 high_cpu.py 是否被杀死
-# pgrep -f "pattern" 可以匹配命令行参数
-if pgrep -f "high_cpu.py" > /dev/null; then
-    echo -e "${RED}[FAIL] 任务1: high_cpu.py 仍在运行！${NC}"
-    echo "       提示: 使用 top 找到 PID，然后 kill 它。"
+# 检查是否运行了 init.sh
+if [ ! -f ".miner_pid" ] || [ ! -f ".service_pid" ]; then
+    echo -e "${RED}[ERROR] 未找到进程记录文件。请先运行 lab/init.sh 启动实验环境。${NC}"
+    exit 1
+fi
+
+MINER_PID=$(cat .miner_pid)
+SERVICE_PID=$(cat .service_pid)
+
+# 任务 1: 终结矿工进程
+# 预期: crypto_miner.sh 进程不应该存在
+if ps -p "$MINER_PID" > /dev/null 2>&1; then
+    echo -e "${RED}[FAIL] 任务1: crypto_miner (PID $MINER_PID) 仍在运行！${NC}"
+    echo "       提示: 使用 kill 命令终结它。"
 else
-    echo -e "${GREEN}[PASS] 任务1: CPU 占用进程已被消灭${NC}"
+    echo -e "${GREEN}[PASS] 任务1: 恶意矿工已被终结${NC}"
     ((PASS++))
 fi
 
-# 任务 2: 检查 frozen_service.py 是否被杀死
-if pgrep -f "frozen_service.py" > /dev/null; then
-    echo -e "${RED}[FAIL] 任务2: frozen_service.py 仍在运行！${NC}"
-    echo "       提示: 使用 ps aux | grep frozen 找到它。"
+# 任务 2: 强制终结顽固进程
+# 预期: invincible_service.sh 进程不应该存在
+if ps -p "$SERVICE_PID" > /dev/null 2>&1; then
+    echo -e "${RED}[FAIL] 任务2: invincible_service (PID $SERVICE_PID) 仍在运行！${NC}"
+    echo "       提示: 普通的 kill 对它无效，因为它捕获了 SIGTERM 信号。试试更强硬的手段 (-9)。"
 else
-    echo -e "${GREEN}[PASS] 任务2: 卡死服务已被终止${NC}"
-    ((PASS++))
-fi
-
-# 任务 3: 检查 sneaky_process.sh 是否被杀死
-if pgrep -f "bash.*sneaky_process.sh" > /dev/null; then
-    echo -e "${RED}[FAIL] 任务3: sneaky_process.sh 仍在运行！${NC}"
-    echo "       提示: 这个进程可能在后台，使用 kill 9 强制结束它。"
-else
-    echo -e "${GREEN}[PASS] 任务3: 伪装进程已被清理${NC}"
+    echo -e "${GREEN}[PASS] 任务2: 顽固进程已被强制终结${NC}"
     ((PASS++))
 fi
 
 echo -e "=============================="
 if [ $PASS -eq $TOTAL ]; then
-    echo -e "${GREEN}恭喜！服务器恢复平静了！(3/3)${NC}"
-    echo -e "你是真正的运维救火队员！"
+    echo -e "${GREEN}恭喜！所有恶意进程已被清除！(2/2)${NC}"
+    echo -e "系统负载已恢复正常。"
 else
-    echo -e "${RED}服务器负载仍然很高，请继续排查！($PASS/$TOTAL)${NC}"
-    echo -e "提示：如果你已经 kill 了进程但这里显示 FAIL，请确认是否误杀了其他进程或者脚本没运行。"
+    echo -e "${RED}还有进程在潜伏，请继续排查！($PASS/$TOTAL)${NC}"
 fi
